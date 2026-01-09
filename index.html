@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>AKUMA Varus</title>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root { --fg:#0f172a; --muted:#475569; --bg:#f8fafc; --card:#fff; --line:#e2e8f0; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--fg); background:var(--bg); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 20px; }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    p { margin: 0 0 14px; color: var(--muted); line-height: 1.4; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 900px){ .grid { grid-template-columns: 360px 1fr; } }
+    .card { background:var(--card); border:1px solid var(--line); border-radius: 12px; padding: 16px; }
+    .row { display:grid; grid-template-columns: 1fr 120px; gap: 10px; align-items:center; margin: 10px 0; }
+    label { font-weight: 700; }
+    input { width: 100%; padding: 10px; border-radius: 10px; border:1px solid var(--line); font-size: 14px; }
+    .btns { display:flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    button { cursor:pointer; border:1px solid var(--line); background:#0f172a; color:white; padding: 10px 12px; border-radius: 10px; font-weight: 800; }
+    button.secondary { background: white; color: var(--fg); }
+    .warn { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; padding: 10px 12px; border-radius: 12px; display:none; }
+    .decision { border-left: 6px solid #0f172a; padding-left: 12px; margin-top: 8px; }
+    .decision h2 { font-size: 16px; margin: 0 0 6px; }
+    .decision .main { font-size: 18px; font-weight: 900; margin: 0 0 8px; }
+    .note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; }
+    .kpi { display:grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 10px; }
+    .kpi .box { border:1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .kpi .t { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .kpi .v { font-size: 16px; font-weight: 900; }
+    ul { margin: 8px 0 0 18px; color: var(--muted); }
+    .small { font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>AKUMA Varus – PUC vs Ostéotomies</h1>
+    <p>Entrer <b>MPTA</b>, <b>LDFA</b>, <b>JLCA</b> (°). Calcul offline, installable (PWA).</p>
+
+    <div class="grid">
+      <div class="card">
+        <h2 style="margin:0 0 10px;font-size:16px;">Entrées</h2>
+
+        <div class="row">
+          <label for="mpta">MPTA (°)</label>
+          <input id="mpta" type="number" step="0.1" placeholder="ex: 84.0" inputmode="decimal" />
+        </div>
+        <div class="row">
+          <label for="ldfa">LDFA (°)</label>
+          <input id="ldfa" type="number" step="0.1" placeholder="ex: 90.0" inputmode="decimal" />
+        </div>
+        <div class="row">
+          <label for="jlca">JLCA (°)</label>
+          <input id="jlca" type="number" step="0.1" placeholder="ex: 4.0" inputmode="decimal" />
+        </div>
+
+        <div class="btns">
+          <button id="compute">Calculer</button>
+          <button class="secondary" id="demo">Demo</button>
+          <button class="secondary" id="reset">Reset</button>
+        </div>
+
+        <div class="small" style="margin-top:10px;">
+          Hypothèse neutre : <span class="mono">87°</span> pour MPTA & LDFA.
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="errors" class="warn"></div>
+
+        <div class="decision">
+          <h2>Recommandation</h2>
+          <div id="mainDecision" class="main">—</div>
+          <div id="why" class="note">Renseigne les valeurs puis “Calculer”.</div>
+        </div>
+
+        <div class="kpi">
+          <div class="box"><div class="t">IAD (°) = JLCA</div><div class="v mono" id="iad">—</div></div>
+          <div class="box"><div class="t">EAD (°) = LDFA − MPTA</div><div class="v mono" id="ead">—</div></div>
+          <div class="box"><div class="t">GD (°) = IAD + EAD</div><div class="v mono" id="gd">—</div></div>
+          <div class="box"><div class="t">IAD% = IAD / GD × 100</div><div class="v mono" id="iadp">—</div></div>
+          <div class="box"><div class="t">EAD% = EAD / GD × 100</div><div class="v mono" id="eadp">—</div></div>
+          <div class="box"><div class="t">FD% / TD% (si EAD≠0)</div><div class="v mono" id="bony">—</div></div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <h2 style="margin:0 0 8px;font-size:16px;">Règles</h2>
+          <ul>
+            <li><span class="mono">IAD% &gt; 60%</span> → <b>PUC (UKA)</b></li>
+            <li><span class="mono">EAD% &gt; 60%</span> → <b>Ostéotomie</b> (puis HTO/DFO/DLO)</li>
+            <li><span class="mono">IAD% ≤ 60%</span> et <span class="mono">EAD% ≤ 60%</span> → <b>zone grise</b></li>
+          </ul>
+        </div>
+
+        <div class="small" style="margin-top:10px;">
+          Remarque : outil d’aide à la décision, à confronter au contexte clinique.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Enregistrement du Service Worker (offline)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+    }
+  </script>
+</body>
+</html>
